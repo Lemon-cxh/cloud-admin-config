@@ -1,56 +1,84 @@
-spring:
-    jackson:
-        date-format: yyyy-MM-dd HH:mm:ss
-        time-zone: GMT+8
-        default-property-inclusion: non_null
-    redis:
-        database: 2
-        host: ${REDIS_HOST:localhost}
-        port: ${REDIS_PORT:6379}
-        pool:
-        max-active: 20
-    datasource:
-      name: test
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/ag_auth_v1?useUnicode=true&characterEncoding=UTF8
-      username: root
-      password: root
-      # 使用druid数据源
-      type: com.alibaba.druid.pool.DruidDataSource
-      driver-class-name: com.mysql.jdbc.Driver
-      filters: stat
-      maxActive: 20
-      initialSize: 1
-      maxWait: 60000
-      minIdle: 1
-      timeBetweenEvictionRunsMillis: 60000
-      minEvictableIdleTimeMillis: 300000
-      validationQuery: select 'x'
-      testWhileIdle: true
-      testOnBorrow: false
-      testOnReturn: false
-      poolPreparedStatements: true
-      maxOpenPreparedStatements: 20
-    rabbitmq:
-      host: ${RABBIT_MQ_HOST:localhost}
-      port:  ${RABBIT_MQ_PORT:5672}
-      username: guest
-      password: guest
-    sleuth:
-      enabled: true
-      http:
-        legacy:
-          enabled: true
 
-mybatis:
-    basepackage: com.github.wxiaoqi.security.auth.mapper
-    xmlLocation: classpath:mapper/**/*.xml
-    mapper-locations: "classpath*:mapper/*.xml"
-
+#请求和响应GZIP压缩支持
 feign:
   httpclient:
     enabled: false
   okhttp:
     enabled: true
+  compression:
+    request:
+      enabled: true
+      mime-types: text/xml,application/xml,application/json
+      min-request-size: 2048
+    response:
+      enabled: true
+
+spring:
+  redis:
+    database: 2
+    host: 127.0.0.1
+    jedis:
+      pool:
+        max-active: 20
+  rabbitmq:
+    host: ${RABBIT_MQ_HOST:localhost}
+    port:  ${RABBIT_MQ_PORT:5672}
+    username: guest
+    password: guest
+  sleuth:
+    enabled: true
+    http:
+      legacy:
+        enabled: true
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          lowerCaseServiceId: true
+          enabled: true
+      routes:
+      # =====================================
+      - id: ace-auth
+        uri: lb://ace-auth
+        order: 8000
+        predicates:
+        - Path=/api/auth/**
+        filters:
+        - StripPrefix=2
+      - id: ace-admin
+        uri: lb://ace-admin
+        order: 8001
+        predicates:
+        - Path=/api/admin/**
+        filters:
+        - StripPrefix=2
+
+logging:
+  level:
+    com.github.wxiaoqi.security.gate.v2: info
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  security:
+    enabled: false
+
+
+gate:
+  ignore:
+    startWith: /auth/jwt
+
+
+auth:
+  serviceId: ace-auth
+  user:
+    token-header: Authorization
+  client:
+    token-header: x-client-token
+    id: ace-gate  #不填则默认读取spring.application.name
+    secret: 123456
 
 ribbon:
   eureka:
@@ -64,37 +92,12 @@ ribbon:
 hystrix:
   threadpool:
     default:
-      coreSize: 1000 ##并发执行的最大线程数，默认10
-      maxQueueSize: 1000 ##BlockingQueue的最大队列数
-      queueSizeRejectionThreshold: 500 ##即使maxQueueSize没有达到，达到queueSizeRejectionThreshold该值后，请求也会被拒绝
+      coreSize: 1000 #并发执行的最大线程数，默认10
+      maxQueueSize: 1000 #BlockingQueue的最大队列数
+      queueSizeRejectionThreshold: 500 #即使maxQueueSize没有达到，达到queueSizeRejectionThreshold该值后，请求也会被拒绝
   command:
     default:
       execution:
         isolation:
           thread:
             timeoutInMilliseconds: 10000
-
-jwt:
-  token-header: Authorization
-  expire: 14400
-  rsa-secret: xx1WET12^%3^(WE45
-
-client:
-  id: ace-auth
-  secret: 123456
-  token-header: x-client-token
-  expire: 14400
-  rsa-secret: x2318^^(*WRYQWR(QW&T
-
-logging:
-    level:
-#        tk.mybatis: DEBUG
-        com.github.wxiaoqi.security.auth: DEBUG
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: '*'
-  security:
-    enabled: false
