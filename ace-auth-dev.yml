@@ -101,3 +101,4 @@ hystrix:
         isolation:
           thread:
             timeoutInMilliseconds: 10000
+version: 1
