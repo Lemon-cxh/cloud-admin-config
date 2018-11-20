@@ -55,7 +55,7 @@ spring:
 
 logging:
   level:
-    com.github.wxiaoqi.security.gate.v2: info
+    root: ERROR
 
 management:
   endpoints:
