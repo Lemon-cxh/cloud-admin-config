@@ -1,7 +1,7 @@
 #请求和响应GZIP压缩支持
 feign:
-#   hystrix:
-#     enabled: true
+  hystrix:
+    enabled: true
   httpclient:
     enabled: false
   okhttp:
