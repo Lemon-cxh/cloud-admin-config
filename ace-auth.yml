@@ -57,8 +57,7 @@ spring:
 
 logging:
   level:
-    root: ERROR
-    com.github.wxiaoqi.security.gate.v2.feign: DEBUG
+    root: INFO
 
 management:
   endpoints:
